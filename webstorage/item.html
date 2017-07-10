@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>使用web storage来修改购物车数量</title>
+		<style type="text/css">
+		.red-bold{color:red;font-weight:bold;}
+		ul{margin:0;padding:0;}
+		li{padding:10px;border:1px solid #ccc;list-style:none;width:25%;margin:20px;float:left;}
+		</style>
+    </head>
+    <body>
+        <header>
+			<h2>商品详情</h2>
+			<hr/>
+			<section>
+				您的购物车有 <span id="cart-count" class="red-bold">0</span> 件商品
+			</section>
+			<p><a href="cart.html">我的购物车</a></p>
+		</header>
+		
+		<section>
+			<ul>
+				<li>
+					<h4>商品一</h4>
+					<button class="add-cart-btn" data-id="1001">加入购物车</button>
+				</li>
+				<li>
+					<h4>商品二</h4>
+					<button class="add-cart-btn" data-id="1002">加入购物车</button>
+				</li>
+				<li>
+					<h4>商品三</h4>
+					<button class="add-cart-btn" data-id="1003">加入购物车</button>
+				</li>
+				<li>
+					<h4>商品四</h4>
+					<button class="add-cart-btn" data-id="1004">加入购物车</button>
+				</li>
+				<li>
+					<h4>商品五</h4>
+					<button class="add-cart-btn" data-id="1005">加入购物车</button>
+				</li>
+				<li>
+					<h4>商品六</h4>
+					<button class="add-cart-btn" data-id="1006">加入购物车</button>
+				</li>
+				<li>
+					<h4>商品七</h4>
+					<button class="add-cart-btn" data-id="1007">加入购物车</button>
+				</li>
+				<li>
+					<h4>商品八</h4>
+					<button class="add-cart-btn" data-id="1008">加入购物车</button>
+				</li>
+			</ul>
+		</section>
+		
+		<script type="text/javascript" src="http://cdn.bootcss.com/jquery/1.12.3/jquery.min.js"></script>
+		<script type="text/javascript">
+			$(function(){
+				var $addCartBtn = $('.add-cart-btn');
+				var $cartCountBox = $('#cart-count');
+                $(window).on('storage', function(e){
+                    if (e.originalEvent.key == 'cartCount') {
+                        $cartCountBox.text(e.originalEvent.newValue);
+                    }
+                });
+				$.ajax({
+					url : 'cart.php?action=count',
+					type:'post',
+					dataType:'json',
+					success:function(res) {
+						var result = typeof res == 'object' ? res : {};
+						if (result.code == 200) {
+							$cartCountBox.text(res.data);
+						}
+					}
+				});
+
+				//加入到购物车
+				$addCartBtn.on('click', function(){
+					var id = $(this).data('id');
+					$.ajax({
+						url:'cart.php?action=add',
+						type:'post',
+						data:{
+							id : id,
+							count : 1
+						},
+						dataType:'json',
+						success:function(res) {
+							var result = typeof res == 'object' ? res : {};
+							if (result.code == 200) {
+								alert("添加成功");
+								$cartCountBox.text(res.data.total);
+								localStorage.cartCount = res.data.total;
+								//localStorage.setItem('cartCount', res.data.total);
+							} else {
+								alert('添加失败');
+							}
+						}
+					});
+				});
+			});
+			
+		</script>
+    </body>
+</html>

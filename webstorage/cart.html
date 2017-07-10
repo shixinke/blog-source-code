@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>使用web storage来修改购物车数量</title>
+		<style type="text/css">
+		.red-bold{color:red;font-weight:bold;}
+		.tips{margin-bottom:20px;padding:20px;border-radius:5px;border:1px dotted #ccc;line-height:30px;}
+			li{list-style:none;padding:10px;margin:10px;border:1px dashed #ccc;}
+		</style>
+    </head>
+    <body>
+	    <div class="tips">
+			<p><span class="red-bold">注意点：</span></p>
+			<p>1、sessionStorage目前还不支持onstorage事件</p>
+			<p>2、在使用jQuery捕获事件时的事件e对象与原生的e对象不是同一个对象，使用e.originalEvent可以获取原生e对象的一些属性</p>
+		</div>
+        <header>
+			<h2>购物车</h2>
+			<hr/>
+			<section>
+				您的购物车有 <span id="cart-count" class="red-bold">0</span> 件商品
+			</section>
+			<p><a href="item.html">产品页面</a></p>
+		</header>
+		
+		<section id="cart-list">
+
+		</section>
+
+		<script type="text/javascript" src="http://cdn.bootcss.com/jquery/1.12.3/jquery.min.js"></script>
+		<script type="text/javascript">
+			$(function(){
+			    var $cartList = $('#cart-list');
+                var $cartCountBox = $('#cart-count');
+                $(window).on('storage', function(e){
+                    if (e.originalEvent.key == 'cartCount') {
+						$cartCountBox.text(e.originalEvent.newValue);
+					}
+				});
+                $.ajax({
+                    url : 'cart.php?action=count',
+                    type:'post',
+                    dataType:'json',
+                    success:function(res) {
+                        var result = typeof res == 'object' ? res : {};
+                        if (result.code == 200) {
+                            $cartCountBox.text(res.data);
+                        }
+                    }
+                });
+			    $.ajax({
+					url:'cart.php?action=lists',
+					dataType:'json',
+					success:function(res) {
+                        var result = typeof res == 'object' ? res : {};
+                        if (result.code == 200) {
+                            if (res.data.length == 0) {
+                                $cartList.html("<p>您的购物车空空如也</p>");
+							} else {
+                                var html = '<ul>';
+                                $.each(res.data, function(idx, row){
+                                    html += '<li data-id="'+row.id+'"><h4>'+row.name+'</h4><p><input type="text" class="cart-num" value="'+row.count+'"> <button class="cart-item-plus">+</button> <button class="cart-item-minus">-</button> <button class="cart-del-item">x</button></p></li>';
+								});
+                                html += '</ul>';
+                                $cartList.html(html);
+							}
+                        } else {
+                            $cartList.html("<p>数据获取失败</p>");
+						}
+					}
+				});
+
+				//添加数量
+                $('#cart-list').on('click', '.cart-item-plus', function(){
+                    var $row = $(this).parents('li');
+                    var $cartNum = $row.find('.cart-num');
+                    var id = $row.data('id');
+                    $.ajax({
+                        url:'cart.php?action=plus',
+                        type:'post',
+                        dataType:'json',
+                        data:{id : id},
+                        success:function(res) {
+                            var result = typeof res == 'object' ? res : {};
+                            if (result.code == 200) {
+                                alert('添加成功');
+                                $cartNum.val(result.data.count);
+                                $cartCountBox.text(result.data.total);
+                                localStorage.cartCount = res.data.total;
+                            } else {
+                                alert('添加失败');
+                            }
+                        }
+                    });
+                });
+
+				//减少数量
+                $('#cart-list').on('click', '.cart-item-minus', function(){
+                    var $row = $(this).parents('li');
+                    var $cartNum = $row.find('.cart-num');
+                    var id = $row.data('id');
+                    $.ajax({
+                        url:'cart.php?action=minus',
+                        type:'post',
+                        dataType:'json',
+                        data:{id : id},
+                        success:function(res) {
+                            var result = typeof res == 'object' ? res : {};
+                            if (result.code == 200) {
+                                alert('减少成功');
+                                if (!result.data.remain) {
+									$row.remove();
+								}
+								$cartNum.val(result.data.count);
+                                $cartCountBox.text(result.data.total);
+                                localStorage.cartCount = res.data.total;
+                            } else {
+                                alert('减少失败');
+                            }
+                        }
+                    });
+                });
+
+				//删除
+				$('#cart-list').on('click', '.cart-del-item', function(){
+				    var $row = $(this).parents('li');
+				    var id = $row.data('id');
+				    $.ajax({
+                        url:'cart.php?action=del',
+						type:'post',
+                        dataType:'json',
+						data:{id : id},
+                        success:function(res) {
+                            var result = typeof res == 'object' ? res : {};
+                            if (result.code == 200) {
+                                alert('删除成功');
+                                $cartCountBox.text(result.data);
+								$row.remove();
+                                localStorage.cartCount = res.data;
+                            } else {
+                                alert('删除失败');
+                            }
+                        }
+					});
+				});
+
+
+			});
+		</script>
+    </body>
+</html>

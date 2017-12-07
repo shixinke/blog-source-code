@@ -4,3 +4,4 @@
 ## 目录
 
 ### 1 [使用localstorage实现购物车数据变更通知](https://github.com/shixinke/blog-source-code/blob/master/webstorage/)
+### 2 [disconf调用演示代码](https://github.com/shixinke/blog-source-code/blob/master/farm-web/)
